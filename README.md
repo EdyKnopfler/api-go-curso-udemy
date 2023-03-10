@@ -1,2 +1,3 @@
-# api-go-curso-udemy
-Curso "Detonando projetos de API com Golang" (Udemy)
+# Curso "Detonando projetos de API com Golang" (Udemy)
+
+https://www.udemy.com/course/detonando-projetos-de-api-com-golang/?kw=detonando+golan&src=sac
