@@ -3,7 +3,7 @@ package backend
 import (
 	"errors"
 
-	"com.blocopad/blocopad/db"
+	"com.blocopad/blocopad/internal/db"
 )
 
 const tam_32k = 32*1024
