@@ -1,14 +1,62 @@
 package main
 
 import (
-	"os"
+	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
+	"os"
 
 	"com.blocopad/blocopad/internal/backend"
 	"com.blocopad/blocopad/internal/db"
 
 	"github.com/gorilla/mux"
 )
+
+func WriteResponse(status int, body interface{}, w http.ResponseWriter) {
+	w.WriteHeader(status)
+	w.Header().Set("Content-Type", "application/json")
+	payload, _ := json.Marshal(body)
+	w.Write(payload)
+}
+
+func ReadNote(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	if data, err := backend.GetKey(id); err == nil {
+		WriteResponse(200, data, w)
+	} else {
+		if err.Error() == "not found" {
+			WriteResponse(404, "Note not found", w)
+		} else {
+			log.Println(err.Error())
+			WriteResponse(500, "Error", w)
+		}
+	}
+}
+
+func WriteNote(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	defer r.Body.Close()
+
+	var note db.Note
+
+	if err := decoder.Decode(&note); err != nil {
+		WriteResponse(
+			http.StatusBadRequest, map[string]string{"error", err.Error()}, w)
+		return
+	}
+
+	uuidString, err := backend.SaveKey(note.Text, note.OneTime)
+
+	if err != nil {
+		WriteResponse(
+			http.StatusBadRequest, map[string]string{"error": "invalid request"}, w)
+	} else {
+		WriteResponse(2300, map[string]string{"code": uuidString}, w)
+	}
+}
 
 func main() {
 	serverPort := "8080"
