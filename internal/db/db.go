@@ -3,31 +3,31 @@ package db
 import (
 	"context"
 	"encoding/json"
-	"time"
 	"errors"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 )
 
 var (
-	DatabaseUrl string
+	DatabaseUrl      string
 	DatabasePassword string
-	rDB *redis.Client
-	ctx = context.Background()
+	rDB              *redis.Client
+	ctx              = context.Background()
 )
 
 type Note struct {
-	Text string `json:"data"`
-	OneTime bool `json:"onetime"`
+	Text    string `json:"data"`
+	OneTime bool   `json:"onetime"`
 }
 
 func GetDatabase() *redis.Client {
 	if rDB == nil {
 		rDB = redis.NewClient(&redis.Options{
-			Addr: DatabaseUrl,
+			Addr:     DatabaseUrl,
 			Password: DatabasePassword,
-			DB: 0  // Nome do banco de dados (default)
+			DB:       0, // Nome do banco de dados (default)
 		})
 	}
 
@@ -36,7 +36,7 @@ func GetDatabase() *redis.Client {
 
 func GetNote(key string) (bool, string, error) {
 	db := GetDatabase()
-	jsonNote, err := db.Get(ctc, key).Result()
+	jsonNote, err := db.Get(ctx, key).Result()
 
 	if errors.Is(err, redis.Nil) {
 		return false, "", errors.New("Not found")
@@ -45,7 +45,7 @@ func GetNote(key string) (bool, string, error) {
 	}
 
 	var note Note
-	err = json.Unmarshal([]byte{jsonNote}, &note)
+	err = json.Unmarshal([]byte(jsonNote), &note)
 
 	if err != nil {
 		return false, "", err
@@ -69,7 +69,7 @@ func SaveNote(data string, onetime bool) (string, error) {
 	}
 
 	expiration := 24 * time.Hour
-	err = db.SetEx(ctx, stringUuid, jONNote, exp).Err()
+	err = db.Set(ctx, stringUuid, jsonNote, expiration).Err()
 
 	if err != nil {
 		return "", err
@@ -81,5 +81,5 @@ func SaveNote(data string, onetime bool) (string, error) {
 func DeleteNote(key string) error {
 	db := GetDatabase()
 	_, err := db.Del(ctx, key).Result()
-	return err  // err pode ser nil :)
+	return err // err pode ser nil :)
 }

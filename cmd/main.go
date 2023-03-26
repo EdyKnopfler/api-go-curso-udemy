@@ -25,13 +25,13 @@ func ReadNote(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	if data, err := backend.GetKey(id); err == nil {
-		WriteResponse(200, data, w)
+		WriteResponse(http.StatusOK, data, w)
 	} else {
-		if err.Error() == "not found" {
-			WriteResponse(404, "Note not found", w)
+		if err.Error() == "Not found" {
+			WriteResponse(http.StatusNotFound, "Note not found", w)
 		} else {
 			log.Println(err.Error())
-			WriteResponse(500, "Error", w)
+			WriteResponse(http.StatusInternalServerError, "Error", w)
 		}
 	}
 }
@@ -44,7 +44,7 @@ func WriteNote(w http.ResponseWriter, r *http.Request) {
 
 	if err := decoder.Decode(&note); err != nil {
 		WriteResponse(
-			http.StatusBadRequest, map[string]string{"error", err.Error()}, w)
+			http.StatusBadRequest, map[string]string{"error": err.Error()}, w)
 		return
 	}
 
@@ -54,7 +54,7 @@ func WriteNote(w http.ResponseWriter, r *http.Request) {
 		WriteResponse(
 			http.StatusBadRequest, map[string]string{"error": "invalid request"}, w)
 	} else {
-		WriteResponse(2300, map[string]string{"code": uuidString}, w)
+		WriteResponse(http.StatusOK, map[string]string{"code": uuidString}, w)
 	}
 }
 
@@ -66,16 +66,16 @@ func main() {
 
 	databaseUrl := "localhost:6379"
 	if dbUrl, hasValue := os.LookupEnv("API_DB_URL"); hasValue {
-		databaseUrl := dbUrl
+		databaseUrl = dbUrl
 	}
 
 	databasePassword := ""
 	if dbPassword, hasValue := os.LookupEnv("API_DB_PASSWORD"); hasValue {
-		databasePassword := dbPassword
+		databasePassword = dbPassword
 	}
 
-	db.DatabaseUrl := databaseUrl
-	db.DatabasePassword := databasePassword
+	db.DatabaseUrl = databaseUrl
+	db.DatabasePassword = databasePassword
 
 	router := mux.NewRouter()
 	router.HandleFunc("/api/note/{id}", ReadNote).Methods("GET")
