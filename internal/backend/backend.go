@@ -8,7 +8,7 @@ import (
 
 const tam_32k = 32*1024
 
-func GetKey(key string) (string, error) {
+var GetKey = func(key string) (string, error) {
 	if len(key) == 0 || len(key) > 36 {
 		return "", errors.New("Tam. máx. da chave: 36")
 	}
@@ -28,7 +28,7 @@ func GetKey(key string) (string, error) {
 	return data, nil
 }
 
-func SaveKey(data string, onetime bool) (string, error) {
+var SaveKey = func(data string, onetime bool) (string, error) {
 	byteSize := len([]rune(data))
 
 	if byteSize == 0 || byteSize > tam_32k {

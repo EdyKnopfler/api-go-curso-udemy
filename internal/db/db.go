@@ -34,7 +34,7 @@ func GetDatabase() *redis.Client {
 	return rDB
 }
 
-func GetNote(key string) (bool, string, error) {
+var GetNote = func(key string) (bool, string, error) {
 	db := GetDatabase()
 	jsonNote, err := db.Get(ctx, key).Result()
 
@@ -54,7 +54,7 @@ func GetNote(key string) (bool, string, error) {
 	return note.OneTime, note.Text, nil
 }
 
-func SaveNote(data string, onetime bool) (string, error) {
+var SaveNote = func(data string, onetime bool) (string, error) {
 	stringUuid := (uuid.New()).String()
 	db := GetDatabase()
 
@@ -78,7 +78,7 @@ func SaveNote(data string, onetime bool) (string, error) {
 	return stringUuid, nil
 }
 
-func DeleteNote(key string) error {
+var DeleteNote = func(key string) error {
 	db := GetDatabase()
 	_, err := db.Del(ctx, key).Result()
 	return err // err pode ser nil :)
