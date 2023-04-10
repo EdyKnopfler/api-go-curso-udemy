@@ -9,6 +9,7 @@ import (
 
 	"com.blocopad/blocopad/internal/backend"
 	"com.blocopad/blocopad/internal/db"
+	"com.blocopad/blocopad/internal/security"
 
 	"github.com/gorilla/mux"
 )
@@ -21,6 +22,11 @@ func WriteResponse(status int, body interface{}, w http.ResponseWriter) {
 }
 
 func ReadNote(w http.ResponseWriter, r *http.Request) {
+	if !security.ValidateToken(r) {
+		WriteResponse(http.StatusForbidden, map[string]string{"status": "Not authorized"}, w)
+		return
+	}
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 
@@ -37,6 +43,11 @@ func ReadNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func WriteNote(w http.ResponseWriter, r *http.Request) {
+	if !security.ValidateToken(r) {
+		WriteResponse(http.StatusForbidden, map[string]string{"status": "Not authorized"}, w)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
 
@@ -77,7 +88,10 @@ func main() {
 	db.DatabaseUrl = databaseUrl
 	db.DatabasePassword = databasePassword
 
+	security.GetKeys()
+
 	router := mux.NewRouter()
+	router.HandleFunc("/api/login", security.Login).Methods("POST")
 	router.HandleFunc("/api/note/{id}", ReadNote).Methods("GET")
 	router.HandleFunc("/api/note", WriteNote).Methods("POST")
 	err := http.ListenAndServe(fmt.Sprintf(":%s", serverPort), router)

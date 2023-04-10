@@ -3,6 +3,7 @@ package security
 import (
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
@@ -15,10 +16,22 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
+type User struct {
+	Username string
+	Password string
+}
+
 var (
 	PublicKey  *rsa.PublicKey
 	PrivateKey *rsa.PrivateKey
 )
+
+func WriteResponse(status int, body interface{}, w http.ResponseWriter) {
+	w.WriteHeader(status)
+	w.Header().Set("Content-Type", "application/json")
+	payload, _ := json.Marshal(body)
+	w.Write(payload)
+}
 
 func GetKeys() {
 	var privateKeyPath string
@@ -43,13 +56,14 @@ func GetKeys() {
 	}
 
 	privBlock, _ := pem.Decode(privKey)
-	key, err := x509.ParsePKCS1PrivateKey(privBlock.Bytes)
+	key, err := x509.ParsePKCS8PrivateKey(privBlock.Bytes)
 
 	if err != nil {
 		panic(err)
 	}
 
-	PrivateKey = key
+	// dot + parenthesis = type assertion :)
+	PrivateKey = key.(*rsa.PrivateKey)
 
 	pubKey, err := ioutil.ReadFile(publicKeyPath)
 
@@ -64,7 +78,6 @@ func GetKeys() {
 		panic(err)
 	}
 
-	// dot + parenthesis = type assertion :)
 	rsaKey, ok := pkey.(*rsa.PublicKey)
 
 	if !ok {
@@ -116,4 +129,25 @@ func ValidateToken(r *http.Request) bool {
 	}
 
 	return true
+}
+
+func Login(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	defer r.Body.Close()
+	var user User
+
+	if err := decoder.Decode(&user); err != nil {
+		WriteResponse(http.StatusBadRequest, map[string]string{"error": err.Error()}, w)
+		return
+	}
+
+	// Faz de conta que tem uma chamada ao Keycloak ou uma autenticação via BD aqui...
+	tokenString := ""
+
+	if user.Username == "kânia" && user.Password == "búco" {
+		tokenString = CreateToken(user.Username)
+		WriteResponse(http.StatusOK, map[string]string{"AccessToken": tokenString}, w)
+	} else {
+		WriteResponse(http.StatusUnauthorized, map[string]string{"error": "Credenciais inválidas"}, w)
+	}
 }
