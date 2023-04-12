@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -104,12 +103,14 @@ func CreateToken(username string) string {
 }
 
 func ValidateToken(r *http.Request) bool {
-	if r.Header["Authorization"] == nil {
+	tokenCookie, err := r.Cookie("Token")
+
+	if err != nil {
+		log.Println("Erro ao ler o cookie")
 		return false
 	}
 
-	tokenString := strings.Replace(r.Header["Authorization"][0], "Bearer ", "", 1)
-	token, errToken := jwt.Parse(tokenString, func(jwtToken *jwt.Token) (interface{}, error) {
+	token, errToken := jwt.Parse(tokenCookie.Value, func(jwtToken *jwt.Token) (interface{}, error) {
 		return PublicKey, nil
 	})
 
@@ -146,7 +147,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	if user.Username == "kânia" && user.Password == "búco" {
 		tokenString = CreateToken(user.Username)
-		WriteResponse(http.StatusOK, map[string]string{"AccessToken": tokenString}, w)
+		cookie := http.Cookie{
+			Name:     "Token",
+			Value:    tokenString,
+			MaxAge:   1800,
+			HttpOnly: true, // Importantíssimo para evitar a leitura por JavaScript :)
+		}
+		http.SetCookie(w, &cookie)
+		WriteResponse(http.StatusOK, map[string]string{"status": "autenticado"}, w)
 	} else {
 		WriteResponse(http.StatusUnauthorized, map[string]string{"error": "Credenciais inválidas"}, w)
 	}
