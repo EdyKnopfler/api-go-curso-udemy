@@ -1,5 +1,4 @@
-# mudando só para ser o diferentão...
-FROM alpine
+FROM ubuntu
 
 WORKDIR /api
 
@@ -7,4 +6,4 @@ COPY api.bin ./
 
 EXPOSE 8080
 
-CMD [ "./api.bin" ]
+CMD [ "/api/api.bin" ]
